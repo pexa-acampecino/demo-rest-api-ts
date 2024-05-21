@@ -1,24 +1,26 @@
 import express from "express";
 
 import { getUsers, deleteUserById, getUserById } from "../db/users";
-import { json } from "body-parser";
+import { ApplicationError, BadRequestError, NotFoundError } from "../errors";
 
 export const getAllUsers = async (
   req: express.Request,
-  res: express.Response
+  res: express.Response,
+  next: express.NextFunction
 ) => {
   try {
     const users = await getUsers();
     return res.status(200).send(users).end();
   } catch (error) {
     console.error(error);
-    return res.status(500).send({ message: "Internal server error" });
+    return next(new ApplicationError());
   }
 };
 
 export const deleteUser = async (
   req: express.Request,
-  res: express.Response
+  res: express.Response,
+  next: express.NextFunction
 ) => {
   try {
     const { id } = req.params;
@@ -26,24 +28,25 @@ export const deleteUser = async (
     return res.status(204).end();
   } catch (error) {
     console.error(error);
-    return res.status(500).send({ message: "Internal server error" });
+    return next(new ApplicationError());
   }
 };
 
 export const updateUser = async (
   req: express.Request,
-  res: express.Response
+  res: express.Response,
+  next: express.NextFunction
 ) => {
   try {
     const { id } = req.params;
     const { username } = req.body;
     if (!username) {
-      return res.status(400).send({ message: "Invalid request" });
+      return next(new BadRequestError("Invalid request"));
     }
 
     const user = await getUserById(id);
     if (!user) {
-      return res.status(404).send({ message: "User not found" });
+      return next(new NotFoundError("User not found"));
     }
 
     user.username = username;
@@ -52,6 +55,6 @@ export const updateUser = async (
     return res.status(200).json(user).end();
   } catch (error) {
     console.error(error);
-    return res.status(500).send({ message: "Internal server error" });
+    return next(new ApplicationError());
   }
 };

@@ -1,8 +1,9 @@
 import express from "express";
-import { get, identity, merge } from "lodash";
+import { get, merge } from "lodash";
 
 import { AUTHENTICATION_COOKIE_NAME } from "../constants/cookies";
 import { getUserBySessionToken } from "../db/users";
+import { ErrorHandler } from "../errors";
 
 export const isAuthenticated = async (
   req: express.Request,
@@ -47,4 +48,16 @@ export const isOwner = (
   }
 
   next();
+};
+
+export const errorHandler: express.ErrorRequestHandler = (
+  error: Error,
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction
+) => {
+  if (error instanceof ErrorHandler) {
+    return res.status(error.status).send(error.serialize());
+  }
+  return res.status(501).send({ message: "Internal server errorss" });
 };
