@@ -6,34 +6,46 @@ import compression from "compression";
 import cors from "cors";
 import mongoose from "mongoose";
 import routes from "./routes";
+import { initializeRedisClient } from "./middlewares";
 
-const app = express();
+import dotenv from "dotenv";
+dotenv.config();
 
-app.use(bodyParser.json());
-app.use(cookieParser());
-app.use(compression());
+async function initializeExpressServer() {
+  const app = express();
 
-app.use(
-  cors({
-    credentials: true,
-  })
-);
+  app.use(bodyParser.json());
+  app.use(cookieParser());
+  app.use(compression());
 
-app.use("/", routes());
+  app.use(
+    cors({
+      credentials: true,
+    })
+  );
 
-const server = http.createServer(app);
+  app.use("/", routes());
 
-server.listen(8080, () => {
-  console.log("Server is running on http://localhost:8080");
-});
+  const server = http.createServer(app);
 
-const MONGO_URL = "mongodb://root:example@0.0.0.0:27017/demo-rest-api-ts";
+  // await initializeRedisClient();
 
-mongoose.Promise = Promise;
-mongoose.connect(MONGO_URL, {
-  authSource: "admin",
-});
-mongoose.connection.on("error", (err: Error) => {
-  console.error(err);
-  process.exit(1);
-});
+  server.listen(8080, () => {
+    console.log("Server is running on http://localhost:8080");
+  });
+
+  const MONGO_URL = `mongodb://${process.env.MONGO_INITDB_ROOT_USERNAME}:${process.env.MONGO_INITDB_ROOT_PASSWORD}@0${process.env.DATABASE_HOST}:${process.env.DATABASE_PORT}/${process.env.MONGO_INITDB_DATABASE}`;
+
+  mongoose.Promise = Promise;
+  mongoose.connect(MONGO_URL, {
+    authSource: "admin",
+  });
+  mongoose.connection.on("error", (err: Error) => {
+    console.error(err);
+    process.exit(1);
+  });
+}
+
+initializeExpressServer()
+  .then()
+  .catch((e) => console.error(e));
